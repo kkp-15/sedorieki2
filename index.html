@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes"> <!-- 画面のズームを許可 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes"> 
     <title>利益計算</title>
     <style>
         body {
@@ -10,7 +10,7 @@
             text-align: center;
             padding: 10px;
             max-width: 100vw;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -36,8 +36,8 @@
             box-sizing: border-box;
         }
         textarea {
-            height: 150px; /* メモ欄を大きくする */
-            resize: vertical; /* ユーザーがサイズを変更できるようにする */
+            height: 200px; /* メモ欄をさらに広げる */
+            resize: vertical; /* ユーザーがサイズ変更できる */
         }
         #profit, #profitRate {
             font-size: 2em;
@@ -56,7 +56,6 @@
 <body>
     <h1>利益計算</h1>
     
-    <!-- 各入力フォーム -->
     <label>購入年月日:</label>
     <input type="date" id="purchaseDate">
     
@@ -75,16 +74,13 @@
     <label>メモ:</label>
     <textarea id="memo" placeholder="メモを入力"></textarea>
     
-    <!-- 利益計算の結果表示 -->
     <div id="profit">利益: 0円</div>
     <div id="profitRate">利益率: 0%</div>
     
-    <!-- データの保存・履歴ボタン -->
     <button onclick="saveData()">保存</button>
     <button onclick="viewHistory()">履歴を見る</button>
     
     <script>
-        // **ページ読み込み時に前回のデータを復元**
         function loadValues() {
             document.getElementById('purchaseDate').value = localStorage.getItem('purchaseDate') || '';
             document.getElementById('purchase').value = localStorage.getItem('purchase') || '';
@@ -95,12 +91,10 @@
             calculateProfit();
         }
 
-        // **数値入力のバリデーション（半角数字以外を削除）**
         function validateInput(input) {
             input.value = input.value.replace(/[^0-9.]/g, '');
         }
 
-        // **利益計算を行い画面に表示**
         function calculateProfit() {
             let purchase = parseFloat(document.getElementById('purchase').value) || 0;
             let sell = parseFloat(document.getElementById('sell').value) || 0;
@@ -114,10 +108,9 @@
             document.getElementById('profit').textContent = `利益: ${profit.toLocaleString()}円`;
             document.getElementById('profitRate').textContent = `利益率: ${profitRate}%`;
             
-            saveValues(); // 自動保存
+            saveValues();
         }
 
-        // **入力データをブラウザに保存**
         function saveValues() {
             localStorage.setItem('purchaseDate', document.getElementById('purchaseDate').value);
             localStorage.setItem('purchase', document.getElementById('purchase').value);
@@ -127,7 +120,6 @@
             localStorage.setItem('memo', document.getElementById('memo').value);
         }
 
-        // **保存ボタンを押したとき、履歴データとして保存**
         function saveData() {
             let history = JSON.parse(localStorage.getItem('history')) || [];
             let entry = {
@@ -143,12 +135,10 @@
             alert('データを保存しました');
         }
 
-        // **履歴ページへ移動**
         function viewHistory() {
             window.location.href = 'history.html';
         }
 
-        // **ページ読み込み時にデータを復元**
         window.onload = loadValues;
     </script>
 </body>
