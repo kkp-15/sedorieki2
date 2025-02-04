@@ -95,6 +95,43 @@
         function goBack() {
             window.location.href = 'index.html';
         }
+function exportCSV() {
+    let history = JSON.parse(localStorage.getItem('history')) || [];
+    if (history.length === 0) {
+        alert("履歴がありません");
+        return;
+    }
+
+    // CSVのヘッダー行
+    let csvContent = "仕入れ年月日,仕入れ価格,販売価格,送料・梱包費,手数料(%),利益,メモ\n";
+
+    // 各データをCSV形式で追加
+    history.forEach(entry => {
+        let row = [
+            entry.date,
+            entry.purchase,
+            entry.sell,
+            entry.shipping,
+            entry.feePercent,
+            entry.profit,
+            `"${entry.memo.replace(/"/g, '""')}"` // メモ内の「"」をエスケープ
+        ].join(",");
+        csvContent += row + "\n";
+    });
+
+    // CSVデータをBlobに変換
+    let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+    // ダウンロード用リンクを作成
+    let link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "profit_history.csv";
+
+    // リンクをクリックしてダウンロード
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
 
         window.onload = loadHistory;
     </script>
