@@ -2,106 +2,144 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>履歴</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes"> 
+    <title>利益計算</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            padding: 20px;
+            padding: 10px;
+            max-width: 100vw;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: auto; /* スクロール可能に */
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
+        label {
+            font-size: 1.2em;
+            display: block;
+            margin-top: 5px;
         }
-        th {
-            background-color: #f4f4f4;
+        input, textarea {
+            width: 90vw;
+            padding: 10px;
+            font-size: 1.5em;
+            margin: 5px 0;
+            text-align: right;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 200px; /* メモ欄をさらに広げる */
+            resize: vertical; /* ユーザーがサイズ変更できる */
+        }
+        #profit, #profitRate {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ff4500;
+            margin-top: 10px;
         }
         button {
-            padding: 5px 10px;
-            margin: 5px;
+            font-size: 1.5em;
+            padding: 10px;
+            margin-top: 10px;
+            width: 90vw;
         }
     </style>
 </head>
 <body>
-    <h1>履歴</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>仕入れ年月日</th>
-                <th>仕入れ価格</th>
-                <th>販売価格</th>
-                <th>送料・梱包費</th>
-                <th>手数料(%)</th>
-                <th>利益</th>
-                <th>利益率(%)</th>
-                <th>メモ</th>
-                <th>削除</th>
-            </tr>
-        </thead>
-        <tbody id="historyTable">
-        </tbody>
-    </table>
-    <button onclick="clearHistory()">全履歴を削除</button>
-    <button onclick="goBack()">戻る</button>
-
+    <h1>利益計算</h1>
+    
+    <label>購入年月日:</label>
+    <input type="date" id="purchaseDate">
+    
+    <label>仕入れ価格（円）:</label>
+    <input type="number" id="purchase" placeholder="例: 5000" oninput="validateInput(this); calculateProfit()">
+    
+    <label>販売価格（円）:</label>
+    <input type="number" id="sell" placeholder="例: 8000" oninput="validateInput(this); calculateProfit()">
+    
+    <label>送料・梱包費（円）:</label>
+    <input type="number" id="shipping" placeholder="例: 500" oninput="validateInput(this); calculateProfit()">
+    
+    <label>手数料（%）:</label>
+    <input type="number" id="feePercent" placeholder="例: 10" oninput="validateInput(this); calculateProfit()">
+    
+    <label>メモ:</label>
+    <textarea id="memo" placeholder="メモを入力"></textarea>
+    
+    <div id="profit">利益: 0円</div>
+    <div id="profitRate">利益率: 0%</div>
+    
+    <button onclick="saveData()">保存</button>
+    <button onclick="viewHistory()">履歴を見る</button>
+    
     <script>
-        function loadHistory() {
-            let history = JSON.parse(localStorage.getItem('history')) || [];
-            let table = document.getElementById('historyTable');
-            table.innerHTML = '';
-            history.forEach((entry, index) => {
-                let row = table.insertRow();
-                row.insertCell(0).textContent = entry.date;
-                row.insertCell(1).textContent = entry.purchase;
-                row.insertCell(2).textContent = entry.sell;
-                row.insertCell(3).textContent = entry.shipping;
-                row.insertCell(4).textContent = entry.feePercent;
-                
-                // 利益を計算
-                let feeAmount = (entry.sell * entry.feePercent) / 100;
-                let profit = entry.sell - entry.purchase - entry.shipping - feeAmount;
-                let profitRate = (profit / entry.sell) * 100;
-                
-                row.insertCell(5).textContent = profit.toFixed(2);
-                row.insertCell(6).textContent = profitRate.toFixed(2) + "%";
-                row.insertCell(7).textContent = entry.memo;
-                
-                let deleteCell = row.insertCell(8);
-                let deleteButton = document.createElement('button');
-                deleteButton.textContent = '削除';
-                deleteButton.onclick = function() {
-                    deleteEntry(index);
-                };
-                deleteCell.appendChild(deleteButton);
-            });
+        function loadValues() {
+            document.getElementById('purchaseDate').value = localStorage.getItem('purchaseDate') || '';
+            document.getElementById('purchase').value = localStorage.getItem('purchase') || '';
+            document.getElementById('sell').value = localStorage.getItem('sell') || '';
+            document.getElementById('shipping').value = localStorage.getItem('shipping') || '';
+            document.getElementById('feePercent').value = localStorage.getItem('feePercent') || '';
+            document.getElementById('memo').value = localStorage.getItem('memo') || '';
+            calculateProfit();
         }
 
-        function deleteEntry(index) {
+        function validateInput(input) {
+            input.value = input.value.replace(/[^0-9.]/g, '');
+        }
+
+        function calculateProfit() {
+            let purchase = parseFloat(document.getElementById('purchase').value) || 0;
+            let sell = parseFloat(document.getElementById('sell').value) || 0;
+            let shipping = parseFloat(document.getElementById('shipping').value) || 0;
+            let feePercent = parseFloat(document.getElementById('feePercent').value) || 0;
+            
+            let fee = (sell * feePercent) / 100;
+            let profit = sell - (purchase + shipping + fee);
+            let profitRate = sell > 0 ? (profit / sell * 100).toFixed(2) : 0;
+            
+            document.getElementById('profit').textContent = `利益: ${profit.toLocaleString()}円`;
+            document.getElementById('profitRate').textContent = `利益率: ${profitRate}%`;
+            
+            saveValues();
+        }
+
+        function saveValues() {
+            localStorage.setItem('purchaseDate', document.getElementById('purchaseDate').value);
+            localStorage.setItem('purchase', document.getElementById('purchase').value);
+            localStorage.setItem('sell', document.getElementById('sell').value);
+            localStorage.setItem('shipping', document.getElementById('shipping').value);
+            localStorage.setItem('feePercent', document.getElementById('feePercent').value);
+            localStorage.setItem('memo', document.getElementById('memo').value);
+        }
+
+        function saveData() {
             let history = JSON.parse(localStorage.getItem('history')) || [];
-            history.splice(index, 1);
+            let entry = {
+                date: document.getElementById('purchaseDate').value,
+                purchase: document.getElementById('purchase').value,
+                sell: document.getElementById('sell').value,
+                shipping: document.getElementById('shipping').value,
+                feePercent: document.getElementById('feePercent').value,
+                memo: document.getElementById('memo').value
+            };
+            history.push(entry);
             localStorage.setItem('history', JSON.stringify(history));
-            loadHistory();
+            alert('データを保存しました');
         }
 
-        function clearHistory() {
-            if (confirm('本当に全履歴を削除しますか？')) {
-                localStorage.removeItem('history');
-                loadHistory();
-            }
+        function viewHistory() {
+            window.location.href = 'history.html';
         }
 
-        function goBack() {
-            window.location.href = 'index.html';
-        }
-
-        window.onload = loadHistory;
+        window.onload = loadValues;
     </script>
 </body>
 </html>
