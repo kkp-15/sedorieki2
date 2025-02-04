@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>入力フォーム</title>
+    <title>データ入力</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -11,87 +11,144 @@
             padding: 20px;
         }
         form {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: left;
         }
-        label, input {
-            margin: 5px;
+        .form-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        label {
+            width: 40%;
+            font-weight: bold;
+        }
+        input {
+            width: 55%;
+            padding: 5px;
+        }
+        #profit {
+            font-weight: bold;
+            color: green;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 16px;
         }
         button:disabled {
             background-color: #ccc;
-            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <h1>データ入力</h1>
-    <form id="dataForm">
-        <label>仕入れ年月日: <input type="date" id="date" required></label>
-        <label>仕入れ価格: <input type="number" id="purchase" required></label>
-        <label>販売価格: <input type="number" id="sell" required></label>
-        <label>送料・梱包費: <input type="number" id="shipping" required></label>
-        <label>手数料(%): <input type="number" id="feePercent" required></label>
-        <label>利益: <span id="profit">0</span> 円</label>
-        <label>メモ: <input type="text" id="memo"></label>
-        <button type="button" id="saveButton" disabled onclick="saveData()">保存</button>
+    <form id="profitForm">
+        <div class="form-group">
+            <label for="date">仕入れ年月日:</label>
+            <input type="date" id="date">
+        </div>
+        <div class="form-group">
+            <label for="purchase">仕入れ価格:</label>
+            <input type="number" id="purchase" min="0">
+        </div>
+        <div class="form-group">
+            <label for="sell">販売価格:</label>
+            <input type="number" id="sell" min="0">
+        </div>
+        <div class="form-group">
+            <label for="shipping">送料・梱包費:</label>
+            <input type="number" id="shipping" min="0">
+        </div>
+        <div class="form-group">
+            <label for="feePercent">手数料(%):</label>
+            <input type="number" id="feePercent" min="0">
+        </div>
+        <div class="form-group">
+            <label>利益:</label>
+            <span id="profit">0</span> 円
+        </div>
+        <div class="form-group">
+            <label for="memo">メモ:</label>
+            <input type="text" id="memo">
+        </div>
+        <button type="button" id="saveButton" disabled>保存</button>
     </form>
-    <button onclick="location.href='history.html'">履歴を見る</button>
+
+    <button onclick="window.location.href='history.html'">履歴を見る</button>
 
     <script>
-        function calculateProfit() {
-            let purchase = parseFloat(document.getElementById('purchase').value) || 0;
-            let sell = parseFloat(document.getElementById('sell').value) || 0;
-            let shipping = parseFloat(document.getElementById('shipping').value) || 0;
-            let feePercent = parseFloat(document.getElementById('feePercent').value) || 0;
-            let profit = sell - purchase - shipping - (sell * (feePercent / 100));
-            document.getElementById('profit').textContent = profit.toFixed(2);
+        document.addEventListener("DOMContentLoaded", function () {
+            // 前回の入力を復元
+            let savedData = JSON.parse(localStorage.getItem("currentInput")) || {};
+            document.getElementById("date").value = savedData.date || "";
+            document.getElementById("purchase").value = savedData.purchase || "";
+            document.getElementById("sell").value = savedData.sell || "";
+            document.getElementById("shipping").value = savedData.shipping || "";
+            document.getElementById("feePercent").value = savedData.feePercent || "";
+            document.getElementById("memo").value = savedData.memo || "";
+            updateProfit();
+            checkInputs();
+
+            // 入力変更時に利益計算と保存ボタンの有効化
+            document.querySelectorAll("input").forEach(input => {
+                input.addEventListener("input", function () {
+                    updateProfit();
+                    checkInputs();
+                    saveCurrentInput();
+                });
+            });
+
+            document.getElementById("saveButton").addEventListener("click", saveData);
+        });
+
+        function updateProfit() {
+            let purchase = parseFloat(document.getElementById("purchase").value) || 0;
+            let sell = parseFloat(document.getElementById("sell").value) || 0;
+            let shipping = parseFloat(document.getElementById("shipping").value) || 0;
+            let feePercent = parseFloat(document.getElementById("feePercent").value) || 0;
+
+            let profit = (sell - purchase - shipping - (sell * (feePercent / 100))).toFixed(2);
+            document.getElementById("profit").textContent = profit;
         }
 
         function checkInputs() {
-            let requiredFields = document.querySelectorAll('#dataForm input[required]');
-            let allFilled = Array.from(requiredFields).every(input => input.value.trim() !== '');
-            document.getElementById('saveButton').disabled = !allFilled;
+            let requiredFields = ["date", "purchase", "sell", "shipping", "feePercent"];
+            let allFilled = requiredFields.every(id => document.getElementById(id).value.trim() !== "");
+            document.getElementById("saveButton").disabled = !allFilled;
+        }
+
+        function saveCurrentInput() {
+            let currentInput = {
+                date: document.getElementById("date").value,
+                purchase: document.getElementById("purchase").value,
+                sell: document.getElementById("sell").value,
+                shipping: document.getElementById("shipping").value,
+                feePercent: document.getElementById("feePercent").value,
+                memo: document.getElementById("memo").value
+            };
+            localStorage.setItem("currentInput", JSON.stringify(currentInput));
         }
 
         function saveData() {
-            let entry = {
-                date: document.getElementById('date').value,
-                purchase: document.getElementById('purchase').value,
-                sell: document.getElementById('sell').value,
-                shipping: document.getElementById('shipping').value,
-                feePercent: document.getElementById('feePercent').value,
-                memo: document.getElementById('memo').value
+            let history = JSON.parse(localStorage.getItem("history")) || [];
+            let newEntry = {
+                date: document.getElementById("date").value,
+                purchase: document.getElementById("purchase").value,
+                sell: document.getElementById("sell").value,
+                shipping: document.getElementById("shipping").value,
+                feePercent: document.getElementById("feePercent").value,
+                profit: document.getElementById("profit").textContent,
+                memo: document.getElementById("memo").value
             };
-            localStorage.setItem('lastInput', JSON.stringify(entry));
-            let history = JSON.parse(localStorage.getItem('history')) || [];
-            history.push(entry);
-            localStorage.setItem('history', JSON.stringify(history));
-            alert('データを保存しました');
+            history.push(newEntry);
+            localStorage.setItem("history", JSON.stringify(history));
+            localStorage.removeItem("currentInput"); // 入力をクリア
+            alert("データを保存しました");
+            location.reload(); // フォームをリセット
         }
-
-        function loadPreviousInput() {
-            let lastInput = JSON.parse(localStorage.getItem('lastInput'));
-            if (lastInput) {
-                document.getElementById('date').value = lastInput.date || '';
-                document.getElementById('purchase').value = lastInput.purchase || '';
-                document.getElementById('sell').value = lastInput.sell || '';
-                document.getElementById('shipping').value = lastInput.shipping || '';
-                document.getElementById('feePercent').value = lastInput.feePercent || '';
-                document.getElementById('memo').value = lastInput.memo || '';
-                calculateProfit();
-                checkInputs();
-            }
-        }
-
-        document.querySelectorAll('#dataForm input').forEach(input => {
-            input.addEventListener('input', () => {
-                calculateProfit();
-                checkInputs();
-            });
-        });
-
-        window.onload = loadPreviousInput;
     </script>
 </body>
 </html>
