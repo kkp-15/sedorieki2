@@ -3,65 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>利益計算</title>
+    <title>入力フォーム</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
         }
-        input, button {
-            margin: 10px;
-            padding: 8px;
-            font-size: 16px;
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
+        label, input {
+            margin: 5px;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: center;
-        }
-        th {
-            background-color: #f4f4f4;
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
-    <h1>利益計算ツール</h1>
-    
-    <label for="date">仕入れ年月日:</label>
-    <input type="date" id="date"><br>
-
-    <label for="purchase">仕入れ価格:</label>
-    <input type="number" id="purchase" placeholder="円"><br>
-
-    <label for="sell">販売価格:</label>
-    <input type="number" id="sell" placeholder="円"><br>
-
-    <label for="shipping">送料・梱包費:</label>
-    <input type="number" id="shipping" placeholder="円"><br>
-
-    <label for="feePercent">手数料(%):</label>
-    <input type="number" id="feePercent" placeholder="%" step="0.1"><br>
-
-    <label for="memo">メモ:</label>
-    <input type="text" id="memo" placeholder="備考"><br>
-
-    <button onclick="calculateProfit()">利益計算</button>
-    <button onclick="saveEntry()">保存</button>
-    <button onclick="goToHistory()">履歴を見る</button>
-
-    <h2>計算結果</h2>
-    <table>
-        <tr>
-            <th>利益</th>
-            <td id="profitResult">-</td>
-        </tr>
-    </table>
+    <h1>データ入力</h1>
+    <form id="dataForm">
+        <label>仕入れ年月日: <input type="date" id="date" required></label>
+        <label>仕入れ価格: <input type="number" id="purchase" required></label>
+        <label>販売価格: <input type="number" id="sell" required></label>
+        <label>送料・梱包費: <input type="number" id="shipping" required></label>
+        <label>手数料(%): <input type="number" id="feePercent" required></label>
+        <label>利益: <span id="profit">0</span> 円</label>
+        <label>メモ: <input type="text" id="memo"></label>
+        <button type="button" id="saveButton" disabled onclick="saveData()">保存</button>
+    </form>
+    <button onclick="location.href='history.html'">履歴を見る</button>
 
     <script>
         function calculateProfit() {
@@ -69,45 +44,54 @@
             let sell = parseFloat(document.getElementById('sell').value) || 0;
             let shipping = parseFloat(document.getElementById('shipping').value) || 0;
             let feePercent = parseFloat(document.getElementById('feePercent').value) || 0;
-
-            let profit = (sell - purchase - shipping - (sell * (feePercent / 100))).toFixed(2);
-            document.getElementById('profitResult').textContent = profit + " 円";
+            let profit = sell - purchase - shipping - (sell * (feePercent / 100));
+            document.getElementById('profit').textContent = profit.toFixed(2);
         }
 
-        function saveEntry() {
-            let date = document.getElementById('date').value;
-            let purchase = parseFloat(document.getElementById('purchase').value) || 0;
-            let sell = parseFloat(document.getElementById('sell').value) || 0;
-            let shipping = parseFloat(document.getElementById('shipping').value) || 0;
-            let feePercent = parseFloat(document.getElementById('feePercent').value) || 0;
-            let memo = document.getElementById('memo').value;
+        function checkInputs() {
+            let requiredFields = document.querySelectorAll('#dataForm input[required]');
+            let allFilled = Array.from(requiredFields).every(input => input.value.trim() !== '');
+            document.getElementById('saveButton').disabled = !allFilled;
+        }
 
-            if (!date) {
-                alert("仕入れ年月日を入力してください");
-                return;
-            }
-
+        function saveData() {
+            let entry = {
+                date: document.getElementById('date').value,
+                purchase: document.getElementById('purchase').value,
+                sell: document.getElementById('sell').value,
+                shipping: document.getElementById('shipping').value,
+                feePercent: document.getElementById('feePercent').value,
+                memo: document.getElementById('memo').value
+            };
+            localStorage.setItem('lastInput', JSON.stringify(entry));
             let history = JSON.parse(localStorage.getItem('history')) || [];
-            history.push({ date, purchase, sell, shipping, feePercent, memo });
+            history.push(entry);
             localStorage.setItem('history', JSON.stringify(history));
-
-            alert("データを保存しました");
-            clearInputs();
+            alert('データを保存しました');
         }
 
-        function clearInputs() {
-            document.getElementById('date').value = "";
-            document.getElementById('purchase').value = "";
-            document.getElementById('sell').value = "";
-            document.getElementById('shipping').value = "";
-            document.getElementById('feePercent').value = "";
-            document.getElementById('memo').value = "";
-            document.getElementById('profitResult').textContent = "-";
+        function loadPreviousInput() {
+            let lastInput = JSON.parse(localStorage.getItem('lastInput'));
+            if (lastInput) {
+                document.getElementById('date').value = lastInput.date || '';
+                document.getElementById('purchase').value = lastInput.purchase || '';
+                document.getElementById('sell').value = lastInput.sell || '';
+                document.getElementById('shipping').value = lastInput.shipping || '';
+                document.getElementById('feePercent').value = lastInput.feePercent || '';
+                document.getElementById('memo').value = lastInput.memo || '';
+                calculateProfit();
+                checkInputs();
+            }
         }
 
-        function goToHistory() {
-            window.location.href = 'history.html';
-        }
+        document.querySelectorAll('#dataForm input').forEach(input => {
+            input.addEventListener('input', () => {
+                calculateProfit();
+                checkInputs();
+            });
+        });
+
+        window.onload = loadPreviousInput;
     </script>
 </body>
 </html>
