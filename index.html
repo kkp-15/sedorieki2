@@ -32,13 +32,17 @@
             font-weight: bold;
             color: green;
         }
-        button {
-            width: 100%;
-            padding: 10px;
+        .button-container {
+            display: flex;
+            justify-content: space-between;
             margin-top: 10px;
+        }
+        .button-container button {
+            width: 48%;
+            padding: 10px;
             font-size: 16px;
         }
-        button:disabled {
+        #saveButton:disabled {
             background-color: #ccc;
         }
     </style>
@@ -74,25 +78,16 @@
             <label for="memo">メモ:</label>
             <input type="text" id="memo">
         </div>
-        <button type="button" id="saveButton" disabled>保存</button>
+        <div class="button-container">
+            <button type="button" id="saveButton" disabled>保存</button>
+            <button type="button" onclick="window.location.href='history.html'">履歴を見る</button>
+        </div>
     </form>
-
-    <button onclick="window.location.href='history.html'">履歴を見る</button>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // 前回の入力を復元
-            let savedData = JSON.parse(localStorage.getItem("currentInput")) || {};
-            document.getElementById("date").value = savedData.date || "";
-            document.getElementById("purchase").value = savedData.purchase || "";
-            document.getElementById("sell").value = savedData.sell || "";
-            document.getElementById("shipping").value = savedData.shipping || "";
-            document.getElementById("feePercent").value = savedData.feePercent || "";
-            document.getElementById("memo").value = savedData.memo || "";
-            updateProfit();
-            checkInputs();
+            loadSavedData();
 
-            // 入力変更時に利益計算と保存ボタンの有効化
             document.querySelectorAll("input").forEach(input => {
                 input.addEventListener("input", function () {
                     updateProfit();
@@ -132,6 +127,18 @@
             localStorage.setItem("currentInput", JSON.stringify(currentInput));
         }
 
+        function loadSavedData() {
+            let savedData = JSON.parse(localStorage.getItem("currentInput")) || {};
+            document.getElementById("date").value = savedData.date || "";
+            document.getElementById("purchase").value = savedData.purchase || "";
+            document.getElementById("sell").value = savedData.sell || "";
+            document.getElementById("shipping").value = savedData.shipping || "";
+            document.getElementById("feePercent").value = savedData.feePercent || "";
+            document.getElementById("memo").value = savedData.memo || "";
+            updateProfit();
+            checkInputs();
+        }
+
         function saveData() {
             let history = JSON.parse(localStorage.getItem("history")) || [];
             let newEntry = {
@@ -145,9 +152,8 @@
             };
             history.push(newEntry);
             localStorage.setItem("history", JSON.stringify(history));
-            localStorage.removeItem("currentInput"); // 入力をクリア
+
             alert("データを保存しました");
-            location.reload(); // フォームをリセット
         }
     </script>
 </body>
