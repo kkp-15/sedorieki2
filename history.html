@@ -44,8 +44,7 @@
                 <th>削除</th>
             </tr>
         </thead>
-        <tbody id="historyTable">
-        </tbody>
+        <tbody id="historyTable"></tbody>
     </table>
     <button onclick="clearHistory()">全履歴を削除</button>
     <button onclick="exportCSV()">CSVダウンロード</button>
@@ -63,10 +62,9 @@
                 row.insertCell(2).textContent = entry.sell;
                 row.insertCell(3).textContent = entry.shipping;
                 row.insertCell(4).textContent = entry.feePercent;
-
-                // 利益の計算 (販売価格 - 仕入れ価格 - 送料 - 手数料)
+                
                 let profit = (entry.sell - entry.purchase - entry.shipping - (entry.sell * (entry.feePercent / 100))).toFixed(2);
-                row.insertCell(5).textContent = profit; // 利益の列を追加
+                row.insertCell(5).textContent = profit;
                 
                 row.insertCell(6).textContent = entry.memo;
                 let deleteCell = row.insertCell(7);
@@ -83,7 +81,7 @@
             let history = JSON.parse(localStorage.getItem('history')) || [];
             history.splice(index, 1);
             localStorage.setItem('history', JSON.stringify(history));
-            loadHistory();
+            setTimeout(loadHistory, 100);
         }
 
         function clearHistory() {
@@ -104,13 +102,10 @@
                 return;
             }
 
-            // CSVのヘッダー行
             let csvContent = "仕入れ年月日,仕入れ価格,販売価格,送料・梱包費,手数料(%),利益,メモ\n";
 
-            // 各データをCSV形式で追加
             history.forEach(entry => {
                 let profit = (entry.sell - entry.purchase - entry.shipping - (entry.sell * (entry.feePercent / 100))).toFixed(2);
-
                 let row = [
                     entry.date,
                     entry.purchase,
@@ -123,15 +118,10 @@
                 csvContent += row + "\n";
             });
 
-            // CSVデータをBlobに変換
             let blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-
-            // ダウンロード用リンクを作成
             let link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
             link.download = "profit_history.csv";
-
-            // リンクをクリックしてダウンロード
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
