@@ -114,7 +114,7 @@ function exportCSV() {
             entry.sell,
             entry.shipping,
             entry.feePercent,
-            entry.profit,
+            profit,
             `"${entry.memo.replace(/"/g, '""')}"` // メモ内の「"」をエスケープ
         ].join(",");
         csvContent += row + "\n";
