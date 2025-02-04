@@ -2,55 +2,54 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>履歴一覧</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>履歴</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            padding: 10px;
+            padding: 20px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 20px;
         }
         th, td {
             border: 1px solid #ddd;
             padding: 8px;
-            text-align: left;
+            text-align: center;
         }
         th {
-            background-color: #f2f2f2;
+            background-color: #f4f4f4;
         }
         button {
-            font-size: 1em;
-            padding: 5px;
+            padding: 5px 10px;
             margin: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>履歴一覧</h1>
+    <h1>履歴</h1>
     <table>
         <thead>
             <tr>
-                <th>購入日</th>
+                <th>仕入れ年月日</th>
                 <th>仕入れ価格</th>
                 <th>販売価格</th>
-                <th>送料</th>
+                <th>送料・梱包費</th>
                 <th>手数料(%)</th>
+                <th>利益</th> <!-- 新しく利益の列を追加 -->
                 <th>メモ</th>
-                <th>操作</th>
+                <th>削除</th>
             </tr>
         </thead>
         <tbody id="historyTable">
         </tbody>
     </table>
-    <button onclick="exportCSV()">CSVエクスポート</button>
-    <button onclick="clearHistory()">履歴を削除</button>
+    <button onclick="clearHistory()">全履歴を削除</button>
     <button onclick="goBack()">戻る</button>
-    
+
     <script>
         function loadHistory() {
             let history = JSON.parse(localStorage.getItem('history')) || [];
@@ -63,9 +62,19 @@
                 row.insertCell(2).textContent = entry.sell;
                 row.insertCell(3).textContent = entry.shipping;
                 row.insertCell(4).textContent = entry.feePercent;
-                row.insertCell(5).textContent = entry.memo;
-                let actions = row.insertCell(6);
-                actions.innerHTML = `<button onclick="deleteEntry(${index})">削除</button>`;
+                
+                // 利益の計算 (販売価格 - 仕入れ価格 - 送料 - 手数料)
+                let profit = (entry.sell - entry.purchase - entry.shipping - (entry.sell * (entry.feePercent / 100))).toFixed(2);
+                row.insertCell(5).textContent = profit; // 利益の列を追加
+                
+                row.insertCell(6).textContent = entry.memo;
+                let deleteCell = row.insertCell(7);
+                let deleteButton = document.createElement('button');
+                deleteButton.textContent = '削除';
+                deleteButton.onclick = function() {
+                    deleteEntry(index);
+                };
+                deleteCell.appendChild(deleteButton);
             });
         }
 
@@ -76,22 +85,8 @@
             loadHistory();
         }
 
-        function exportCSV() {
-            let history = JSON.parse(localStorage.getItem('history')) || [];
-            let csvContent = "data:text/csv;charset=utf-8,購入日,仕入れ価格,販売価格,送料,手数料(%),メモ\n";
-            history.forEach(entry => {
-                csvContent += `${entry.date},${entry.purchase},${entry.sell},${entry.shipping},${entry.feePercent},${entry.memo}\n`;
-            });
-            let encodedUri = encodeURI(csvContent);
-            let link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "history.csv");
-            document.body.appendChild(link);
-            link.click();
-        }
-
         function clearHistory() {
-            if (confirm('履歴を全て削除しますか？')) {
+            if (confirm('本当に全履歴を削除しますか？')) {
                 localStorage.removeItem('history');
                 loadHistory();
             }
