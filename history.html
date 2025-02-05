@@ -3,167 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>データ入力</title>
+    <title>履歴</title>
     <style>
-        /* 基本的なスタイル設定 */
         body {
             font-family: Arial, sans-serif;
             text-align: center;
             padding: 20px;
         }
-        form {
-            max-width: 400px;
-            margin: 0 auto;
-            text-align: left;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
-        .form-group {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
         }
-        label {
-            width: 40%;
-            font-weight: bold;
-        }
-        input {
-            width: 55%;
-            padding: 5px;
-        }
-        #profit {
-            font-weight: bold;
-            color: green;
+        th {
+            background-color: #f2f2f2;
         }
         .button-container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
+            margin-top: 20px;
         }
-        .button-container button {
-            width: 48%;
+        button {
             padding: 10px;
             font-size: 16px;
-        }
-        #saveButton:disabled {
-            background-color: #ccc;
         }
     </style>
 </head>
 <body>
-    <h1>データ入力</h1>
-    <form id="profitForm">
-        <!-- 各入力フィールド -->
-        <div class="form-group">
-            <label for="date">仕入れ年月日:</label>
-            <input type="date" id="date">
-        </div>
-        <div class="form-group">
-            <label for="purchase">仕入れ価格:</label>
-            <input type="number" id="purchase" min="0">
-        </div>
-        <div class="form-group">
-            <label for="sell">販売価格:</label>
-            <input type="number" id="sell" min="0">
-        </div>
-        <div class="form-group">
-            <label for="shipping">送料・梱包費:</label>
-            <input type="number" id="shipping" min="0">
-        </div>
-        <div class="form-group">
-            <label for="feePercent">手数料(%):</label>
-            <input type="number" id="feePercent" min="0">
-        </div>
-        <div class="form-group">
-            <label>利益:</label>
-            <span id="profit">0</span> 円
-        </div>
-        <div class="form-group">
-            <label for="memo">メモ:</label>
-            <input type="text" id="memo">
-        </div>
-        
-        <!-- ボタンエリア -->
-        <div class="button-container">
-            <button type="button" id="saveButton" disabled>保存</button>
-            <button type="button" onclick="window.location.href='history.html'">履歴を見る</button>
-        </div>
-    </form>
+    <h1>履歴</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>仕入れ年月日</th>
+                <th>仕入れ価格</th>
+                <th>販売価格</th>
+                <th>送料・梱包費</th>
+                <th>手数料(%)</th>
+                <th>利益</th>
+                <th>メモ</th>
+            </tr>
+        </thead>
+        <tbody id="historyBody">
+            <!-- ここに履歴データが追加される -->
+        </tbody>
+    </table>
+    
+    <div class="button-container">
+        <button onclick="clearHistory()">履歴をクリア</button>
+        <button onclick="exportCSV()">CSVエクスポート</button>
+        <button onclick="window.location.href='index.html'">戻る</button>
+    </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            loadSavedData();
-
-            // 入力が変更されたら、利益を更新し、ボタンの状態を変更する
-            document.querySelectorAll("input").forEach(input => {
-                input.addEventListener("input", function () {
-                    updateProfit();
-                    checkInputs();
-                    saveCurrentInput();
-                });
-            });
-
-            document.getElementById("saveButton").addEventListener("click", saveData);
+            loadHistory();
         });
 
-        // 利益を計算する関数
-        function updateProfit() {
-            let purchase = parseFloat(document.getElementById("purchase").value) || 0;
-            let sell = parseFloat(document.getElementById("sell").value) || 0;
-            let shipping = parseFloat(document.getElementById("shipping").value) || 0;
-            let feePercent = parseFloat(document.getElementById("feePercent").value) || 0;
-
-            let profit = (sell - purchase - shipping - (sell * (feePercent / 100))).toFixed(2);
-            document.getElementById("profit").textContent = profit;
-        }
-
-        // 必須入力がすべて埋まっているかチェックし、ボタンを有効化
-        function checkInputs() {
-            let requiredFields = ["date", "purchase", "sell", "shipping", "feePercent"];
-            let allFilled = requiredFields.every(id => document.getElementById(id).value.trim() !== "");
-            document.getElementById("saveButton").disabled = !allFilled;
-        }
-
-        // 入力中のデータを一時保存
-        function saveCurrentInput() {
-            let currentInput = {
-                date: document.getElementById("date").value,
-                purchase: document.getElementById("purchase").value,
-                sell: document.getElementById("sell").value,
-                shipping: document.getElementById("shipping").value,
-                feePercent: document.getElementById("feePercent").value,
-                memo: document.getElementById("memo").value
-            };
-            localStorage.setItem("currentInput", JSON.stringify(currentInput));
-        }
-
-        // ページ読み込み時に保存されたデータを復元
-        function loadSavedData() {
-            let savedData = JSON.parse(localStorage.getItem("currentInput")) || {};
-            document.getElementById("date").value = savedData.date || "";
-            document.getElementById("purchase").value = savedData.purchase || "";
-            document.getElementById("sell").value = savedData.sell || "";
-            document.getElementById("shipping").value = savedData.shipping || "";
-            document.getElementById("feePercent").value = savedData.feePercent || "";
-            document.getElementById("memo").value = savedData.memo || "";
-            updateProfit();
-            checkInputs();
-        }
-
-        // データを履歴として保存
-        function saveData() {
+        function loadHistory() {
             let history = JSON.parse(localStorage.getItem("history")) || [];
-            let newEntry = {
-                date: document.getElementById("date").value,
-                purchase: document.getElementById("purchase").value,
-                sell: document.getElementById("sell").value,
-                shipping: document.getElementById("shipping").value,
-                feePercent: document.getElementById("feePercent").value,
-                profit: document.getElementById("profit").textContent,
-                memo: document.getElementById("memo").value
-            };
-            history.push(newEntry);
-            localStorage.setItem("history", JSON.stringify(history));
+            let historyBody = document.getElementById("historyBody");
+            historyBody.innerHTML = "";
 
-            alert("データを保存しました");
+            history.forEach(entry => {
+                let row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${entry.date}</td>
+                    <td>${entry.purchase}</td>
+                    <td>${entry.sell}</td>
+                    <td>${entry.shipping}</td>
+                    <td>${entry.feePercent}</td>
+                    <td>${entry.profit}</td>
+                    <td>${entry.memo}</td>
+                `;
+                historyBody.appendChild(row);
+            });
+        }
+
+        function clearHistory() {
+            if (confirm("履歴を削除しますか？")) {
+                localStorage.removeItem("history");
+                loadHistory();
+            }
+        }
+
+        function exportCSV() {
+            let history = JSON.parse(localStorage.getItem("history")) || [];
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "仕入れ年月日,仕入れ価格,販売価格,送料・梱包費,手数料(%),利益,メモ\n";
+
+            history.forEach(entry => {
+                let row = `${entry.date},${entry.purchase},${entry.sell},${entry.shipping},${entry.feePercent},${entry.profit},${entry.memo}\n`;
+                csvContent += row;
+            });
+
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "history.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
